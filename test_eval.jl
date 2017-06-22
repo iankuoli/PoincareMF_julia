@@ -6,7 +6,7 @@ include("evaluate.jl")
 #
 # Setting.
 #
-file_name = "PairPRPF_K100_2017-06-07"
+file_name = "PoincareMF_K2_2017-06-23"
 
 #dataset = "MovieLens1M"
 dataset = "MovieLens100K"
@@ -28,13 +28,36 @@ matX_train, matX_test, matX_valid, M, N = LoadUtilities(training_path, testing_p
 #
 # Load files to reconstruct the model.
 #
-matTheta, matBeta, matEpsilon, matEta, prior, C, delta, alpha = read_model(file_name)
+matTheta, matBeta, vecGamma, vecDelta, alpha, lr = read_model_PoincareMF(file_name)
 
 
 #
 # Evaluate the performace of the model.
 #
 test_precision, test_recall, Tlog_likelihood = evaluate(matX_test, matX_train, matTheta, matBeta, topK, C, alpha)
+
+
+
+
+matTheta
+
+norm_theta = sqrt(diag(matTheta * matTheta'))
+norm_beta = sqrt(diag(matBeta * matBeta'))
+
+
+
+
+
+
+
+
+matTheta[6:10,:]
+
+
+
+
+
+matBeta[1:5,:]
 
 
 
