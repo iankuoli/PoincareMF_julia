@@ -60,12 +60,10 @@ function evaluatePoincareMF(matX::SparseMatrixCSC{Float64, Int64}, matX_train::S
   step_size = 300
   denominator = 0
 
-  println("QQ")
   ret_tmp = @parallel (+) for j = 1:ceil(Int64, length(vec_usr_idx)/step_size)
     infer_N_eval_Pointcare(matX, matX_train, matTheta, matBeta, vecGamma, vecDelta, topK, vec_usr_idx, j, step_size)
   end
 
-  println("QQ")
   sum_vecPrecision = ret_tmp[1:length(topK)]
   sum_vecRecall = ret_tmp[(length(topK)+1):2*length(topK)]
   sum_denominator = ret_tmp[end]
@@ -87,12 +85,10 @@ function evaluatePRPF(matX::SparseMatrixCSC{Float64, Int64}, matX_train::SparseM
   step_size = 300
   denominator = 0
 
-  println("QQ")
   ret_tmp = @parallel (+) for j = 1:ceil(Int64, length(vec_usr_idx)/step_size)
     infer_N_eval_PRPF(matX, matX_train, matTheta, matBeta, C, alpha, topK, vec_usr_idx, j, step_size)
   end
 
-  println("QQ")
   sum_vecPrecision = ret_tmp[1:length(topK)]
   sum_vecRecall = ret_tmp[(length(topK)+1):2*length(topK)]
   sum_log_likelihood = ret_tmp[end-1]
