@@ -12,9 +12,9 @@ include("conf.jl")
 #dataset = "MovieLens1M"
 #dataset = "MovieLens100K"
 #dataset = "Lastfm1K"
-dataset = "Lastfm2K"
+#dataset = "Lastfm2K"
 #dataset = "Lastfm360K"
-#dataset = "SmallToy"
+dataset = "SmallToy"
 
 env = 1
 model_type = "PoincareMF"
@@ -46,19 +46,23 @@ matX_train, matX_test, matX_valid, M, N = LoadUtilities(training_path, testing_p
 #
 # Training
 #
-lr = 0.000001
-check_step = 2
-test_step = 0
+lr = 0.01
+check_step = 5
+test_step = 5
+MaxItr = 2000
+Ks = [2]
+topK = [1, 2, 3, 4]
+ini_scale = 0.003
+alpha = 0.1
 listBestPrecisionNRecall = zeros(length(Ks), length(topK)*2)
 for k = 1:length(Ks)
   K = Ks[k]
-  test_precision, test_recall, valid_precision, valid_recall, matTheta, vecGamma, matBeta, vecDelta = PoincareMF(model_type, K, M, N,
-                                                                                                      matX_train, matX_test, matX_valid,
-                                                                                                      ini_scale, alpha, lr, usr_batch_size, MaxItr,
-                                                                                                      topK, test_step, check_step)
-  end
-
-  println(matTheta[1,:])
+  test_precision, test_recall,
+  valid_precision, valid_recall,
+  matTheta, vecGamma, matBeta, vecDelta = PoincareMF(model_type, K, M, N,
+                                                     matX_train, matX_test, matX_valid,
+                                                     ini_scale, alpha, lr, usr_batch_size, MaxItr,
+                                                     topK, test_step, check_step)
 
   (bestVal, bestIdx) = findmax(test_precision[:,1])
   listBestPrecisionNRecall[k,:] = [test_precision[bestIdx, :]; test_recall[bestIdx, :]]
@@ -85,14 +89,17 @@ listBestPrecisionNRecall
 
 
 
-#
+norm_theta = sqrt(diag(matTheta * matTheta'))
+norm_beta = sqrt(diag(matBeta * matBeta'))
+
+
+matTheta[6:10,:]
 
 
 
 
 
-
-
+matBeta[1:5,:]
 
 
 
