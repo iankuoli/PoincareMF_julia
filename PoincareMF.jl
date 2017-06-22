@@ -32,9 +32,9 @@ function update_matTheta(matTheta::Array{Float64,2}, matBeta::Array{Float64,2},
     dot_theta_beta = dot(matTheta[u_id,:], matBeta[i_id,:])
 
     # Compute vec_partial_L_by_d
-    f_ui = exp( acosh( 1 + 2 * ( norm_diff / (vec_theta_norm[u] * vec_beta_norm[i]) )^2 ) + vecGamma[u] + vecDelta[i] )
-    #f_ui = exp(distance_Poincare(matTheta[usr_idx[u],:], matBeta[itm_idx[i],:]) + vecGamma[u] + vecDelta[i])
-    vec_partial_L_by_d = (1 / (-1 + f_ui) + (1 + alpha * sampled_v[itr]) / (1 + f_ui)) * f_ui
+    #f_ui = exp( acosh( 1 + 2 * ( norm_diff / (vec_theta_norm[u] * vec_beta_norm[i]) )^2 ) + vecGamma[u] + vecDelta[i] )
+    f_ui = exp( acosh( 1 + 2 * ( norm_diff / (vec_theta_norm[u] * vec_beta_norm[i]) )^2 ) )
+    vec_partial_L_by_d = (1 / (-1 + f_ui) - (1 + alpha*sampled_v[itr]) / (1 + f_ui)) * f_ui
 
     # Compute vec_partial_d_by_theta
     a = 1 - vec_theta_norm[u] ^ 2
@@ -55,7 +55,7 @@ function update_matTheta(matTheta::Array{Float64,2}, matBeta::Array{Float64,2},
     end
   end
 
-  vecGamma[usr_idx] += lr * vec_partial_L_by_gamma
+  #vecGamma[usr_idx] += lr * vec_partial_L_by_gamma
 
   return nothing
 end
@@ -86,9 +86,9 @@ function update_matBeta(matTheta::Array{Float64,2}, matBeta::Array{Float64,2},
     dot_theta_beta = dot(matTheta[u_id,:], matBeta[i_id,:])
 
     # Compute vec_partial_L_by_d
-    f_ui = exp( acosh( 1 + 2 * ( norm_diff / ((1-vec_theta_norm[u]) * (1-vec_beta_norm[i])) )^2 ) + vecGamma[u] + vecDelta[i] )
-    #f_ui = exp(distance_Poincare(matTheta[usr_idx[u],:], matBeta[itm_idx[i],:]) + vecGamma[u] + vecDelta[i])
-    vec_partial_L_by_d = (1 / (-1 + f_ui) + (1 + alpha * sampled_v[itr]) / (1 + f_ui)) * f_ui
+    #f_ui = exp( acosh( 1 + 2 * ( norm_diff / ((1-vec_theta_norm[u]) * (1-vec_beta_norm[i])) )^2 ) + vecGamma[u] + vecDelta[i] )
+    f_ui = exp( acosh( 1 + 2 * ( norm_diff / (vec_theta_norm[u] * vec_beta_norm[i]) )^2 ) )
+    vec_partial_L_by_d = (1 / (-1 + f_ui) - (1 + alpha*sampled_v[itr]) / (1 + f_ui)) * f_ui
 
     # Compute vec_partial_d_by_theta
     a = 1 - vec_beta_norm[i] ^ 2
@@ -109,7 +109,7 @@ function update_matBeta(matTheta::Array{Float64,2}, matBeta::Array{Float64,2},
     end
   end
 
-  vecDelta[itm_idx] += lr * vec_partial_L_by_delta
+  #vecDelta[itm_idx] += lr * vec_partial_L_by_delta
 
   return nothing
 end
@@ -127,7 +127,6 @@ function PoincareMF(model_type::String, K::Int64, M::Int64, N::Int64,
 
   IsConverge = false
   itr = 0
-  lr = 0.
 
   valid_precision = zeros(Float64, Int(ceil(MaxItr/check_step)), length(topK))
   valid_recall = zeros(Float64, Int(ceil(MaxItr/check_step)), length(topK))
@@ -160,6 +159,8 @@ function PoincareMF(model_type::String, K::Int64, M::Int64, N::Int64,
     sampled_i, sampled_j, sampled_v = findnz(matX_train[usr_idx, itm_idx])
   end
 
+  println(lr)
+
   while IsConverge == false && itr < MaxItr
     itr += 1;
     @printf("\nStep: %d \n", itr)
@@ -168,7 +169,7 @@ function PoincareMF(model_type::String, K::Int64, M::Int64, N::Int64,
     # Set the learning rate
     # ref: "Poincar\'e Embeddings for Learning Hierarchical Representations.". arXiv by FAIR, 2017
     #
-    usr_batch_size == M? lr = 1.:(1. + itr) ^ -kappa
+    #usr_batch_size == M? lr = 1.:(1. + itr) ^ -kappa
 
     #
     # Sample data
@@ -189,7 +190,27 @@ function PoincareMF(model_type::String, K::Int64, M::Int64, N::Int64,
     update_matTheta(matTheta, matBeta, vecGamma, vecDelta, sampled_i, sampled_j, sampled_v, alpha, K, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
     update_matBeta(matTheta, matBeta, vecGamma, vecDelta, sampled_i, sampled_j, sampled_v, alpha, K, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
 
-    println(matTheta[1:10,:])
+
+    L_obj = 0
+
+    for itr_entry = 1:length(sampled_v)
+      u_id = usr_idx[sampled_i[itr_entry]]
+      i_id = itm_idx[sampled_j[itr_entry]]
+      #f_ui = exp( acosh( 1 + 2 * ( norm(matTheta[u_id,:] - matBeta[i_id,:]) / (norm(matTheta[u_id,:]) * norm(matBeta[i_id,:])) )^2 ) + vecGamma[u_id] + vecDelta[i_id] )
+      f_ui = exp( acosh( 1 + 2 * ( norm(matTheta[u_id,:] - matBeta[i_id,:]) / (norm(matTheta[u_id,:]) * norm(matBeta[i_id,:])) )^2 ) )
+      if f_ui <= 1
+        println(acosh( 1 + 2 * ( norm(matTheta[u_id,:] - matBeta[i_id,:]) / (norm(matTheta[u_id,:]) * norm(matBeta[i_id,:])) )^2 ))
+        println(vecGamma[u_id])
+        println(vecDelta[i_id])
+        println(f_{ui})
+      end
+
+      L_obj += (alpha * matX_train[u_id, i_id] * log(2) + log(-1 + f_ui) - (1 + alpha * matX_train[u_id, i_id]) * log(1 + f_ui)) / length(sampled_v)
+    end
+
+    println(L_obj)
+    println(lr)
+    #println(matTheta[1:10,:])
     #
     # Validation
     #
@@ -197,7 +218,6 @@ function PoincareMF(model_type::String, K::Int64, M::Int64, N::Int64,
       println("Validation ... ")
       indx = Int(itr / check_step)
       valid_precision[indx,:], valid_recall[indx,:] = evaluatePoincareMF(matX_valid, matX_train, matTheta, matBeta, vecGamma, vecDelta, topK, alpha)
-      println("QQ")
       println("validation precision: " * string(valid_precision[indx,:]))
       println("validation recall: " * string(valid_recall[indx,:]))
 
