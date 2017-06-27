@@ -2,6 +2,7 @@ addprocs(2)
 
 include("LoadData.jl")
 @everywhere include("PoincareMF.jl")
+@everywhere include("LogisticMF.jl")
 include("conf.jl")
 
 
@@ -12,15 +13,15 @@ include("conf.jl")
 #dataset = "MovieLens1M"
 #dataset = "MovieLens100K"
 #dataset = "Lastfm1K"
-#dataset = "Lastfm2K"
+dataset = "Lastfm2K"
 #dataset = "Lastfm360K"
-dataset = "SmallToy"
+#dataset = "SmallToy"
 
-env = 1
+env = 2
 model_type = "PoincareMF"
 
 #Ks = [5, 20, 50, 100, 150, 200]
-Ks = [10]
+Ks = [100]
 topK = [5, 10, 15, 20]
 usr_batch_size = 0
 test_step = 2
@@ -46,22 +47,28 @@ matX_train, matX_test, matX_valid, M, N = LoadUtilities(training_path, testing_p
 #
 # Training
 #
-lr = 0.01
-check_step = 5
-test_step = 5
-MaxItr = 2000
-Ks = [2]
-topK = [1, 2, 3, 4]
-ini_scale = 0.003
-alpha = 0.1
+lr = 0.00005
+check_step = 10
+test_step = 10
+MaxItr = 300
+Ks = [100]
+topK = [5, 10, 15, 20]
+ini_scale = 0.3 / 100
+alpha = 1.0
 listBestPrecisionNRecall = zeros(length(Ks), length(topK)*2)
+lambda = 0.0
 for k = 1:length(Ks)
   K = Ks[k]
   test_precision, test_recall,
   valid_precision, valid_recall,
-  matTheta, vecGamma, matBeta, vecDelta = PoincareMF(model_type, K, M, N,
+  # matTheta, vecGamma, matBeta, vecDelta = PoincareMF(model_type, K, M, N,
+  #                                                    matX_train, matX_test, matX_valid,
+  #                                                    ini_scale, alpha, lr, usr_batch_size, MaxItr,
+  #                                                    topK, test_step, check_step)
+
+  matTheta, vecGamma, matBeta, vecDelta = LogisticMF(model_type, K, M, N,
                                                      matX_train, matX_test, matX_valid,
-                                                     ini_scale, alpha, lr, usr_batch_size, MaxItr,
+                                                     ini_scale, alpha, lambda, lr, usr_batch_size, MaxItr,
                                                      topK, test_step, check_step)
 
   (bestVal, bestIdx) = findmax(test_precision[:,1])
@@ -74,6 +81,8 @@ end
 writedlm(results_path, listBestPrecisionNRecall)
 
 listBestPrecisionNRecall
+
+
 
 
 

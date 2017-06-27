@@ -54,6 +54,7 @@ function LogPRPFObjFunc(C::Float64, alpha::Float64, X::SparseMatrixCSC{Float64, 
   # XX: predicted matrix
   #
   obj = 0;
+
   for u = 1:size(X, 1)
     (js, vs) = findnz(X[u, :]);
     if length(vs) == 0

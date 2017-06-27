@@ -4,6 +4,10 @@ function inference(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta:
   return matTheta[usr_idx,:] * matBeta';
 end
 
+function inferenceLogisticMF(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, vecBiasU::Array{Float64,1}, matBeta::Array{Float64,2}, vecBiasI::Array{Float64,1})
+  return broadcast(+, broadcast(+, matTheta[usr_idx,:] * matBeta', vecBiasU[usr_idx]), vecBiasI')
+end
+
 
 function inference_Poincare(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecGamma::Array{Float64,1}, vecDelta::Array{Float64,1})
   ret = zeros(length(usr_idx), size(matBeta, 1))
