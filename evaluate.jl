@@ -57,8 +57,8 @@ end
 
 
 function infer_N_eval_Pointcare(matX::SparseMatrixCSC{Float64, Int64}, matX_train::SparseMatrixCSC{Float64, Int64},
-                                matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecGamma::Array{Float64,1}, vecDelta::Array{Float64,1},
-                                topK::Array{Int64,1}, vec_usr_idx::Array{Int64,1}, j::Int64, step_size::Int64)
+                                matTheta::Array{Float64,2}, vecGamma::Array{Float64,1}, matBeta::Array{Float64,2}, vecDelta::Array{Float64,1},
+                                alpha::Float64, topK::Array{Int64,1}, vec_usr_idx::Array{Int64,1}, j::Int64, step_size::Int64)
 
   range_step = collect((1 + (j-1) * step_size):min(j*step_size, length(vec_usr_idx)))
 
@@ -80,7 +80,7 @@ end
 
 
 function evaluatePoincareMF(matX::SparseMatrixCSC{Float64, Int64}, matX_train::SparseMatrixCSC{Float64, Int64},
-                            matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecGamma::Array{Float64,1}, vecDelta::Array{Float64,1},
+                            matTheta::Array{Float64,2}, vecGamma::Array{Float64,1}, matBeta::Array{Float64,2}, vecDelta::Array{Float64,1},
                             topK::Array{Int64,1}, alpha::Float64)
 
   (vec_usr_idx, j, v) = findnz(sum(matX, 2))
@@ -91,7 +91,7 @@ function evaluatePoincareMF(matX::SparseMatrixCSC{Float64, Int64}, matX_train::S
   denominator = 0
 
   ret_tmp = @parallel (+) for j = 1:ceil(Int64, length(vec_usr_idx)/step_size)
-    infer_N_eval_Pointcare(matX, matX_train, matTheta, matBeta, vecGamma, vecDelta, topK, vec_usr_idx, j, step_size)
+    infer_N_eval_Pointcare(matX, matX_train, matTheta, vecGamma, matBeta, vecDelta, alpha, topK, vec_usr_idx, j, step_size)
   end
 
   sum_vecPrecision = ret_tmp[1:length(topK)]
@@ -126,10 +126,6 @@ function evaluatePRPF(matX::SparseMatrixCSC{Float64, Int64}, matX_train::SparseM
 
   precision = sum_vecPrecision / sum_denominator
   recall = sum_vecRecall / sum_denominator
-
-  println(sum_vecPrecision)
-  println(sum_vecRecall)
-  println(sum_denominator)
 
   log_likelihood = sum_log_likelihood / countnz(matX)
 

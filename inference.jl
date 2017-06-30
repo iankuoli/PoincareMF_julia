@@ -21,8 +21,7 @@ function inference_Poincare(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2},
     norm_theta = norm(matTheta[u_id,:])
 
     for i_id = 1:size(matBeta,1)
-      #ret[u, i_id] = acosh( 1 + 2 * ( norm(matTheta[u_id,:] - matBeta[i_id,:]) / ( (1-norm_theta) * (1-vec_norm_beta[i_id]) ) )^2 ) + vecGamma[u_id] + vecDelta[i_id]
-      ret[u, i_id] = acosh( 1 + 2 * ( norm(matTheta[u_id,:] - matBeta[i_id,:]) / ( (1-norm_theta) * (1-vec_norm_beta[i_id]) ) )^2 )
+      ret[u, i_id] = acosh( 1 + 2 * norm(matTheta[u_id,:] - matBeta[i_id,:])^2 / ( (1-norm_theta^2) * (1-vec_norm_beta[i_id]^2) ) )
     end
   end
 
