@@ -2,12 +2,13 @@ using DataStructures
 
 
 function maxK(vec::Array{Float64,1}, K::Int64)
+
   retVal = zeros(Float64, K);
   retIdx = zeros(Int64, K);
 
-  heap_v = DataStructures.heapify(vec, Base.Order.Reverse);
+  heap_v = DataStructures.heapify(vec, Base.Order.Reverse)
 
-  k = K;
+  k = K
   while k > 0
     topk_val = DataStructures.heappop!(heap_v, Base.Order.Reverse);
     topk_idx = findn(vec.==topk_val);

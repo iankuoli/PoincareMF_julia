@@ -35,6 +35,18 @@ function train_filepath(data_name::String)
     training_path = joinpath(homedir(), "Dataset", "SmallToy_train.csv")
     testing_path = joinpath(homedir(), "Dataset", "SmallToy_test.csv")
     validation_path = joinpath(homedir(), "Dataset", "SmallToy_valid.csv")
+
+  elseif data_name == "SmallToy2"
+    # SmallToy
+    training_path = joinpath(homedir(), "Dataset", "SmallToy2_train.csv")
+    testing_path = joinpath(homedir(), "Dataset", "SmallToy2_test.csv")
+    validation_path = joinpath(homedir(), "Dataset", "SmallToy2_valid.csv")
+
+  elseif data_name == "SmallToy3"
+    # SmallToy
+    training_path = joinpath(homedir(), "Dataset", "SmallToy3_train.csv")
+    testing_path = joinpath(homedir(), "Dataset", "SmallToy3_test.csv")
+    validation_path = joinpath(homedir(), "Dataset", "SmallToy3_valid.csv")
   end
 
   return training_path, testing_path, validation_path

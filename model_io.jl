@@ -7,8 +7,6 @@ function write_model_PoincareMF(file_name, matTheta, matBeta, vecGamma, vecDelta
     rm(path)
   end
 
-  print(alpha)
-
   h5write(path, "PoincareMF/matTheta", matTheta)
   h5write(path, "PoincareMF/matBeta", matBeta)
   h5write(path, "PoincareMF/vecGamma", vecGamma)

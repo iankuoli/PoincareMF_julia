@@ -9,25 +9,71 @@ function inferenceLogisticMF(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}
 end
 
 
-function inference_Poincare(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecGamma::Array{Float64,1}, vecDelta::Array{Float64,1})
-  ret = zeros(length(usr_idx), size(matBeta, 1))
-  vec_norm_beta = zeros(size(matBeta, 1))
-  for itr = 1:size(matBeta,1)
-    vec_norm_beta[itr] = norm(matBeta[itr,:])
-  end
+function inference_Poincare_sqdist(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecBiasU::Array{Float64,1}, vecBiasI::Array{Float64,1})
+  ret = zeros(length(usr_idx), size(matBeta, 2))
+
+  vec_sq_norm_theta = sum(matTheta[:,usr_idx] .^ 2, 1)[:]
+  vec_sq_norm_beta = sum(matBeta .^ 2, 1)[:]
 
   for u = 1:length(usr_idx)
-    u_id = usr_idx[u]
-    norm_theta = norm(matTheta[u_id,:])
-
-    for i_id = 1:size(matBeta,1)
-      ret[u, i_id] = acosh( 1 + 2 * norm(matTheta[u_id,:] - matBeta[i_id,:])^2 / ( (1-norm_theta^2) * (1-vec_norm_beta[i_id]^2) ) )
-    end
+    tmp1 = acosh.( 1 .+ 2 .* sum(broadcast(-, matBeta, matTheta[:,usr_idx[u]]) .^ 2, 1)[:] ./ ((1 - vec_sq_norm_theta[u]) .* (1 .- vec_sq_norm_beta)) )
+    ret[u,:] = -tmp1.^2 + vecBiasU[usr_idx[u]] + vecBiasI
   end
 
-
-  return exp.(-ret)
+  return ret
 end
+
+
+function inference_Poincare2(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecBiasU::Array{Float64,1}, vecBiasI::Array{Float64,1})
+  ret = zeros(length(usr_idx), size(matBeta, 2))
+
+  vec_sq_norm_theta = sum(matTheta[:,usr_idx] .^ 2, 1)[:]
+  vec_sq_norm_beta = sum(matBeta .^ 2, 1)[:]
+
+  for u = 1:length(usr_idx)
+    tmp1 = acosh.( 1 .+ 2 .* sum(broadcast(-, matBeta, matTheta[:,usr_idx[u]]) .^ 2, 1)[:] ./ ((1 - vec_sq_norm_theta[u]) .* (1 .- vec_sq_norm_beta)) )
+    tmp2 = acosh.( 1 .+ 2 .* sum(matBeta.^2, 1)[:] ./ (1 .- vec_sq_norm_beta) )
+    tmp3 = acosh.( 1 .+ 2 .* sum(matTheta[:,usr_idx[u]].^2, 1)[:] ./ (1 - vec_sq_norm_theta[u]) )
+    ret[u,:] = tmp2.^2 .+ tmp3.^2 .- tmp1.^2 + vecBiasU[usr_idx[u]] + vecBiasI
+  end
+
+  return ret
+end
+
+
+function inference_Poincare_tfidf(log_sum_X_i::Array{Float64,1}, usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecBiasU::Array{Float64,1}, vecBiasI::Array{Float64,1})
+  ret = zeros(length(usr_idx), size(matBeta, 2))
+
+  vec_sq_norm_theta = sum(matTheta[:,usr_idx] .^ 2, 1)[:]
+  vec_sq_norm_beta = sum(matBeta .^ 2, 1)[:]
+
+  for u = 1:length(usr_idx)
+    tmp1 = acosh.( 1 .+ 2 .* sum(broadcast(-, matBeta, matTheta[:,usr_idx[u]]) .^ 2, 1)[:] ./ ((1 - vec_sq_norm_theta[u]) .* (1 .- vec_sq_norm_beta)) )
+    tmp2 = acosh.( 1 .+ 2 .* sum(matBeta.^2, 1)[:] ./ (1 .- vec_sq_norm_beta) )
+    tmp3 = acosh.( 1 .+ 2 .* sum(matTheta[:,usr_idx[u]].^2, 1)[:] ./ (1 - vec_sq_norm_theta[u]) )
+    ret[u,:] = (tmp2.^2 .+ tmp3.^2 .- tmp1.^2 + vecBiasU[usr_idx[u]] + vecBiasI) .* log_sum_X_i
+  end
+
+  return ret
+end
+
+
+function inference_Poincare_inverse(usr_idx::Array{Int64,1}, matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, vecBiasU::Array{Float64,1}, vecBiasI::Array{Float64,1})
+  ret = zeros(length(usr_idx), size(matBeta, 2))
+
+  vec_sq_norm_theta = sum(matTheta[:,usr_idx] .^ 2, 1)[:]
+  vec_sq_norm_beta = sum(matBeta .^ 2, 1)[:]
+
+  for u = 1:length(usr_idx)
+    tmp1 = acosh.( 1 .+ 2 .* sum(broadcast(-, matBeta, matTheta[:,usr_idx[u]]) .^ 2, 1)[:] ./ ((1 - vec_sq_norm_theta[u]) .* (1 .- vec_sq_norm_beta)) )
+    tmp2 = acosh.( 1 .+ 2 .* sum(matBeta.^2, 1)[:] ./ (1 .- vec_sq_norm_beta) )
+    tmp3 = acosh.( 1 .+ 2 .* sum(matTheta[:,usr_idx[u]].^2, 1)[:] ./ (1 - vec_sq_norm_theta[u]) )
+    ret[u,:] = (1 .- tmp2).^2 .+ (1 .- tmp3).^2 .- tmp1.^2 + vecBiasU[usr_idx[u]] + vecBiasI
+  end
+
+  return ret
+end
+
 
 function infer_entry(matTheta::Array{Float64,2}, matBeta::Array{Float64,2}, i_idx, j_idx)
   return (matTheta[i_idx,:]' * matBeta[j_idx, :])[1]
