@@ -46,9 +46,9 @@ function PoincareMF(Ini::Bool, probDropout::Float64, model_type::String, K::Int6
     matBeta[:,itm_zeros] = 0
 
     #Initialize Biases
-    vecBiasU = ini_scale * (rand(M) - 0.5)
+    vecBiasU = 0.01 / K * rand(M)
     vecBiasU[usr_zeros] = 0
-    vecBiasI = ini_scale * (rand(N) - 0.5)
+    vecBiasI = 0.01 / K * rand(N)
     vecBiasI[itm_zeros] = 0
   end
 
@@ -61,6 +61,9 @@ function PoincareMF(Ini::Bool, probDropout::Float64, model_type::String, K::Int6
   # Compute the objective function
   if model_type == "PoincareMF_random_negative" || model_type == "PoincareMF_softmax" || model_type == "PoincareMF_minibatch"
     objval = obj_val(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, CS, lambda, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
+  elseif model_type == "sqdistPoincareMF_minibatch"
+    gamma = 1.0
+    objval = obj_val_sqdist(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, CS, lambda, gamma, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
   elseif model_type == "invPoincareMF_minibatch"
     objval = obj_val_inverse(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, CS, lambda, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
   elseif model_type == "PoincareMF_tfidf_minibatch"
@@ -115,7 +118,8 @@ function PoincareMF(Ini::Bool, probDropout::Float64, model_type::String, K::Int6
     if model_type == "PoincareMF_random_negative" || model_type == "PoincareMF_softmax" || model_type == "PoincareMF_minibatch"
       objval = obj_val(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, CS, lambda, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
     elseif model_type == "sqdistPoincareMF_minibatch"
-      objval = obj_val_sqdist(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, lambda, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
+      gamma = 1.0
+      objval = obj_val_sqdist(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, CS, lambda, gamma, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
     elseif model_type == "invPoincareMF_minibatch"
       objval = obj_val_inverse(matTheta, matBeta, vecBiasU, vecBiasI, matX_train, alpha, CS, lambda, usr_idx_len, itm_idx_len, usr_idx, itm_idx)
     elseif model_type == "PoincareMF_tfidf_minibatch"
@@ -175,7 +179,7 @@ function PoincareMF(Ini::Bool, probDropout::Float64, model_type::String, K::Int6
       #
       # Check whether the step performs the best. If yes, run testing and save model
       #
-      if findmax(valid_precision[:,1])[2] == indx || (size(valid_precision,2)>1 && findmax(valid_precision[:,1])[2] != indx && findmax(valid_precision[:,2])[2] != indx)
+      if findmax(valid_precision[:,1])[2] == indx || (size(valid_precision,2)>1 && findmax(valid_precision[:,1])[2] != indx && findmax(valid_precision[:,2])[2] == indx)
         # Testing
         println("Testing ... ")
         indx = Int(itr / check_step)
@@ -191,6 +195,7 @@ function PoincareMF(Ini::Bool, probDropout::Float64, model_type::String, K::Int6
         file_name = string(model_type, "_K", K, "_", string(now())[1:10])
         write_model_PoincareMF(file_name, matTheta, matBeta, vecBiasU, vecBiasI, alpha, lr)
 
+        println("BEST!!!!!")
         bestTheta = copy(matTheta)
         bestBeta = copy(matBeta)
         bestBiasU = copy(vecBiasU)
